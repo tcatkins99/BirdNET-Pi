@@ -11,6 +11,9 @@ my_dir=$HOME/BirdNET-Pi/scripts
 #sudo chmod -R g+wr $HOME/*
 find $HOME/* -not -user $USER -execdir sudo -E chown $USER:$USER {} \+
 find $HOME/* -not -user $USER -execdir sudo chmod g+wr {} \+
+chmod 666 ~/BirdNET-Pi/scripts/*.txt
+chmod 666 ~/BirdNET-Pi/*.txt
+chmod -R a+w $HOME/BirdNET-Pi/scripts/*.php
 
 # Create blank sitename as it's optional. First time install will use $HOSTNAME.
 if ! grep SITE_NAME /etc/birdnet/birdnet.conf &>/dev/null;then
@@ -179,6 +182,10 @@ if ! grep CUSTOM_IMAGE /etc/birdnet/birdnet.conf &>/dev/null;then
 fi
 if ! grep CUSTOM_IMAGE_TITLE /etc/birdnet/birdnet.conf &>/dev/null;then
   sudo -u$USER echo "CUSTOM_IMAGE_TITLE=\"\"" >> /etc/birdnet/birdnet.conf
+fi
+
+if ! grep APPRISE_ONLY_NOTIFY_SPECIES_NAMES /etc/birdnet/birdnet.conf &>/dev/null;then
+  sudo -u$USER echo "APPRISE_ONLY_NOTIFY_SPECIES_NAMES=\"\"" >> /etc/birdnet/birdnet.conf
 fi
 
 

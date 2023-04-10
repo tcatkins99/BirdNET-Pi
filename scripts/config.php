@@ -76,7 +76,7 @@ if(isset($_GET["latitude"])){
     $apprise_weekly_report = 0;
   }
 
-  if(isset($timezone)) {
+  if(isset($timezone) && in_array($timezone, DateTimeZone::listIdentifiers())) {
     shell_exec("sudo timedatectl set-timezone ".$timezone);
     date_default_timezone_set($timezone);
     echo "<script>setTimeout(
@@ -92,7 +92,11 @@ if(isset($_GET["latitude"])){
     // can't set the date manually if it's getting it from the internet, disable ntp
     exec("sudo timedatectl set-ntp false");
 
-    exec("sudo date -s '".$_GET['date']." ".$_GET['time']."'");
+    // check if valid date and time
+    $datetime = DateTime::createFromFormat('Y-m-d H:i', $_GET['date'] . ' ' . $_GET['time']);
+    if ($datetime && $datetime->format('Y-m-d H:i') === $_GET['date'] . ' ' . $_GET['time']) {
+      exec("sudo date -s '".$_GET['date']." ".$_GET['time']."'");
+    }
   } else {
     // user checked 'use time from internet if available,' so make sure that's on
     if(strlen(trim(exec("sudo timedatectl | grep \"NTP service: active\""))) == 0){
@@ -109,20 +113,22 @@ if(isset($_GET["latitude"])){
   }
 
   if ($model != $lang_config['MODEL'] || $language != $lang_config['DATABASE_LANG']){
-    $user = trim(shell_exec("awk -F: '/1000/{print $1}' /etc/passwd"));
-    $home = trim(shell_exec("awk -F: '/1000/{print $6}' /etc/passwd"));
+    if(strlen($language) == 2){
+      $user = trim(shell_exec("awk -F: '/1000/{print $1}' /etc/passwd"));
+      $home = trim(shell_exec("awk -F: '/1000/{print $6}' /etc/passwd"));
 
-    // Archive old language file
-    syslog_shell_exec("cp -f $home/BirdNET-Pi/model/labels.txt $home/BirdNET-Pi/model/labels.txt.old", $user);
+      // Archive old language file
+      syslog_shell_exec("cp -f $home/BirdNET-Pi/model/labels.txt $home/BirdNET-Pi/model/labels.txt.old", $user);
 
-    if($model == "BirdNET_GLOBAL_3K_V2.2_Model_FP16"){
-    // Install new language label file
-      syslog_shell_exec("sudo chmod +x $home/BirdNET-Pi/scripts/install_language_label_nm.sh && $home/BirdNET-Pi/scripts/install_language_label_nm.sh -l $language", $user);
-    } else {
-      syslog_shell_exec("$home/BirdNET-Pi/scripts/install_language_label.sh -l $language", $user);
+      if($model == "BirdNET_GLOBAL_3K_V2.2_Model_FP16"){
+      // Install new language label file
+        syslog_shell_exec("sudo chmod +x $home/BirdNET-Pi/scripts/install_language_label_nm.sh && $home/BirdNET-Pi/scripts/install_language_label_nm.sh -l $language", $user);
+      } else {
+        syslog_shell_exec("$home/BirdNET-Pi/scripts/install_language_label.sh -l $language", $user);
+      }
+
+      syslog(LOG_INFO, "Successfully changed language to '$language' and model to '$model'");
     }
-
-    syslog(LOG_INFO, "Successfully changed language to '$language' and model to '$model'");
   }
 
 
@@ -271,7 +277,7 @@ if(isset($_GET['sendtest']) && $_GET['sendtest'] == "true") {
   $body = str_replace("\$overlap", $overlap, $body);
   $body = str_replace("\$flickrimage", $exampleimage, $body);
 
-  echo "<pre class=\"bash\">".shell_exec($home."/BirdNET-Pi/birdnet/bin/apprise -vv --plugin-path ".$home."/.apprise/plugins "." -t '".$title."' -b '".$body."' ".$attach." ".$cf." ")."</pre>";
+  echo "<pre class=\"bash\">".shell_exec($home."/BirdNET-Pi/birdnet/bin/apprise -vv --plugin-path ".$home."/.apprise/plugins "." -t '".escapeshellcmd($title)."' -b '".escapeshellcmd($body)."' ".$attach." ".$cf." ")."</pre>";
 
   die();
 }
@@ -639,8 +645,11 @@ https://discordapp.com/api/webhooks/{WebhookID}/{WebhookToken}
       <h2>Time and Date</h2>
       <span>If connected to the internet, retrieve time automatically?</span>
       <input type="checkbox" onchange='handleChange(this)' <?php echo $checkedvalue; ?> ><br>
-      <input onclick="this.showPicker()" type="date" id="date" name="date" value="<?php echo date('Y-m-d') ?>" <?php echo $disabledvalue; ?>>
-      <input onclick="this.showPicker()" type="time" id="time" name="time" value="<?php echo date('H:i') ?>" <?php echo $disabledvalue; ?>><br>
+      <?php
+      $date = new DateTime('now');
+      ?>
+      <input onclick="this.showPicker()" type="date" id="date" name="date" value="<?php echo $date->format('Y-m-d') ?>" <?php echo $disabledvalue; ?>>
+      <input onclick="this.showPicker()" type="time" id="time" name="time" value="<?php echo $date->format('H:i'); ?>" <?php echo $disabledvalue; ?>><br>
       <label for="timezone">Select a Timezone: </label>
       <select name="timezone">
       <option disabled selected>

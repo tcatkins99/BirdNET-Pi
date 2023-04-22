@@ -1,3 +1,35 @@
+This is a slightly modified BirdNET-Pi repo that supports an [alternative UI](https://github.com/tcatkins99/birdnet-pi-alt-ui).
+This *does not* replace the current UI and all modifications are seperate from the BirdNET-Pi UI.
+
+## Installation
+This repo adds additonal files under homepage/api which implement REST like endpoints. The files for implementing these endpoints can be found under homepage/api.
+
+In order to serve these files, add a directory named `api` under the `BirdSongs/Extracted` folder (typically found in the users's home directory at ~/`~/BirdSongs/Extracted`), e.g.
+
+```bash
+mkdir ~/BirdSongs/Extracted/api
+```
+Within this new api directory, create a symlink to the api files:
+```bash
+ln -s ~/BirdNET-Pi/homepage/api/index.php ./index.php
+```
+
+## Usage
+Access the api at /api/index.php?
+Currently, the api supports the following:
+- GET `/api/index.php?stats_overview` will give overview stats
+- POST `/api/index.php?stats` which accepts a json payload:
+    ```typescript
+    {
+        startDate?: string;
+        endDate?: string;
+        limit?: number;
+        speciesList?: string[];
+    };
+    ```
+
+---
+
 <h1 align="center"><a href="https://github.com/mcguirepr89/BirdNET-Pi/blob/main/LICENSE">Review the license!!</a></h1>
 <h1 align="center">You may not use BirdNET-Pi to develop a commercial product!!!!</h1>
 <h1 align="center">
